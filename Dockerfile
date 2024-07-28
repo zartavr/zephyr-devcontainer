@@ -81,16 +81,18 @@ RUN <<EOT
 	wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZSDK_VERSION}/zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
 	wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v{ZSDK_VERSION}/sha256.sum | shasum --check --ignore-missing
     tar xf zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
-	zephyr-sdk-${ZSDK_VERSION}/setup.sh -t "arm-zephyr-eabi" -h -c
 	rm zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
+    mv zephyr-sdk-${ZSDK_VERSION} zephyr-sdk
+	zephyr-sdk/setup.sh -t "arm-zephyr-eabi" -h -c
+EOT
 EOT
 
 USER ${USERNAME}
 
 RUN <<EOT
-    /opt/zephyr-sdk-${ZSDK_VERSION}/setup.sh -c
+    /opt/zephyr-sdk/setup.sh -c
     chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}/.cmake
 EOT
 
 ENV ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-ENV PATH=/opt/zephyr-sdk-${ZSDK_VERSION}/arm-zephyr-eabi/bin:$PATH
+ENV PATH=/opt/zephyr-sdk/arm-zephyr-eabi/bin:$PATH
