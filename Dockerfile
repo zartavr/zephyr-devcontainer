@@ -85,7 +85,19 @@ RUN <<EOT
     mv zephyr-sdk-${ZSDK_VERSION} zephyr-sdk
 	zephyr-sdk/setup.sh -t "arm-zephyr-eabi" -h -c
 EOT
+
+ARG CLANGD_VERSION=18.1.3
+
+RUN <<EOT
+    cd /opt
+    sudo apt-get install unzip
+    wget https://github.com/clangd/clangd/releases/download/18.1.3/clangd-linux-18.1.3.zip
+    unzip clangd-linux-${CLANGD_VERSION}.zip
+    rm clangd-linux-${CLANGD_VERSION}.zip
+    mv clangd_${CLANGD_VERSION} clangd
 EOT
+
+ENV PATH=/opt/clangd/bin:$PATH
 
 USER ${USERNAME}
 
