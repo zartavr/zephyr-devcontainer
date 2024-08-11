@@ -35,7 +35,14 @@ RUN apt-get update && \
     gcc-multilib \
     g++-multilib \
     libsdl2-dev \
-    libmagic1 && \
+    libmagic1 \
+# openocd deps
+    libtool \
+    libusb-1.0-0-dev \
+    libhidapi-dev \
+    usbutils \
+    udev \
+    automake && \
     rm -rf /var/lib/apt/lists/*
 
 RUN <<EOT
@@ -56,16 +63,8 @@ RUN <<EOT
     useradd --uid $UID --gid $GID -m $USERNAME
     echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
     chmod 0440 /etc/sudoers.d/$USERNAME
+    usermod -a -G plugdev ${USERNAME}
 EOT
-
-# Install openocd deps
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y \
-    libtool \
-    libusb-1.0-0-dev \
-    libhidapi-dev \
-    usbutils \
-    automake 
 
 # Install openocd
 ARG OPENOCD_VERSION=0.12.0
@@ -76,8 +75,6 @@ RUN cd && git clone -b v${OPENOCD_VERSION} https://github.com/openocd-org/openoc
     ./bootstrap && \
     ./configure --enable-cmsis-dap && \
     make && sudo make install && \
-    sudo mkdir -p /etc/udev/rules.d && \
-    sudo cp contrib/60-openocd.rules /etc/udev/rules.d/ && \
     cd .. && rm -r openocd
 
 USER root
