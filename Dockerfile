@@ -35,7 +35,14 @@ RUN apt-get update && \
     gcc-multilib \
     g++-multilib \
     libsdl2-dev \
-    libmagic1 && \
+    libmagic1 \
+# openocd deps
+    libtool \
+    libusb-1.0-0-dev \
+    libhidapi-dev \
+    usbutils \
+    udev \
+    automake && \
     rm -rf /var/lib/apt/lists/*
 
 RUN <<EOT
@@ -56,21 +63,21 @@ RUN <<EOT
     useradd --uid $UID --gid $GID -m $USERNAME
     echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USERNAME}
     chmod 0440 /etc/sudoers.d/$USERNAME
+    usermod -a -G plugdev ${USERNAME}
 EOT
 
-# Install debugger openocd
-RUN apt-get update && \
-    apt-get install --no-install-recommends -y \
-    libtool \
-    libusb-1.0-0-dev \
-    usbutils \
-    openocd
+# Install openocd
+ARG OPENOCD_VERSION=0.12.0
+USER ${USERNAME}
 
-# Install debugger rules
-ADD https://github.com/stlink-org/stlink.git stlink/
-RUN mkdir -p /etc/udev/rules.d && \
-    mv stlink/config/udev/rules.d /etc/udev/ && \
-    rm -r stlink
+RUN cd && git clone -b v${OPENOCD_VERSION} https://github.com/openocd-org/openocd.git && \
+    cd openocd && \
+    ./bootstrap && \
+    ./configure --enable-cmsis-dap && \
+    make && sudo make install && \
+    cd .. && rm -r openocd
+
+USER root
 
 # Install Zephyr SDK
 ARG ZSDK_VERSION=0.16.8
@@ -80,7 +87,7 @@ RUN <<EOT
 	cd /opt
 	wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v${ZSDK_VERSION}/zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
 	wget -O - https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v{ZSDK_VERSION}/sha256.sum | shasum --check --ignore-missing
-    tar xf zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
+    tar -xf zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
 	rm zephyr-sdk-${ZSDK_VERSION}_linux-x86_64_minimal.tar.xz
     mv zephyr-sdk-${ZSDK_VERSION} zephyr-sdk
 	zephyr-sdk/setup.sh -t "arm-zephyr-eabi" -h -c
